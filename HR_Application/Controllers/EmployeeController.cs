@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.IO;
+using System.Xml;
 
 namespace HR_Application.Controllers
 {
@@ -86,7 +88,47 @@ namespace HR_Application.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpPost]
+        public ActionResult FileUpload(HttpPostedFile file)
+        {
+            List<Employee> employees = employeeRepo.GetEmployees().ToList();
 
+            var path = "";
+            if (file.ContentLength > 0)
+            {
+                var fileName = Path.GetFileName(file.FileName);
+                path = Path.Combine(Server.MapPath("~/HRApplication/Content/Employee"), fileName);
+                file.SaveAs(path);
+            }
+
+            XmlDocument xmlDoc = new XmlDocument();
+            string xmlPath = path;
+            xmlDoc.Load(path);
+
+            XmlNodeList Clist = xmlDoc.GetElementsByTagName("name");
+            //for (int i=0;i<Clist.Count;i++) {
+
+            //    Console.WriteLine(Clist[i].InnerText.ToString());
+            //    System.Threading.Thread.Sleep(1000);
+            //}
+            //Console.WriteLine(Environment.NewLine);
+
+            foreach (XmlNode node in xmlDoc.SelectNodes("Content/Employee"))
+            {
+                employees.Add(new Employee
+                {
+                    FirstName = node["FirstName"].InnerText,
+                    LastName = node["LastName"].InnerText,
+                    Division = node["Division"].InnerText,
+                    Building = node["Room"].InnerText,
+                    Title = node["Title"].InnerText,
+                    Room = node["Room"].InnerText
+                });
+            }
+            // call save changes
+            employeeRepo.Save();
+            return View("Index");
+        }
 
         protected override void Dispose(bool disposing)
         {
